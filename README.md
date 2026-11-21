@@ -29,8 +29,8 @@ Configure **General** tab:
 * Set a strong root password
 * Enable Unprivileged Container (An unprivileged container is more secure because its root user has limited permissions on the Proxmox host).
 
-**Template
-*** Select the downloaded **Debian 13** template.
+**Template**
+Select the downloaded **Debian 13** template.
 
 **Disks**
 * Storage: `local-lvm` in my case
@@ -59,6 +59,7 @@ Why didn't I use DHCP Reservation?
 
 DHCP Reservation is used to make a device receive the same IP address every time, but the reserved address normally needs to be within the router's DHCP pool. Since I chose an address outside that range (`192.168.1.10`), a reservation wasn't necessary. The router won't accidentally assign the same address to another device.
 
+Finish the wizard and start the container.
   
 ## 1.3 Configure Automatic Startup
 
@@ -66,10 +67,57 @@ Select your Container → **Options** → **Start at boot** → **Enable**
 
 This ensures the AdGuard container starts automatically whenever the Proxmox host boots or restarts.
 
+## 2. Update Debian
+Start by updating the package lists and installing available updates:
 
+```bash
+apt update && apt upgrade -y
+```
 
+However, the container couldn't resolve the Debian repository addresses, so the update process failed with _Temporary failure resolving_.
 
+### 2.1 DNS Issue
 
+After investigating, I noticed that the Container had inherited the DNS settings from the Proxmox host. Its DNS server was `100.100.100.100`, which belongs to **Tailscale**.
+
+Tailscale was already installed and configured on the Proxmox host, but not inside our newly created container. Therefore, the container couldn't properly use the host's Tailscale DNS configuration.
+
+### 2.2 Temporary DNS Solution
+
+In the Proxmox web interface → Select Container → **DNS** → **DNS server** → **Edit** → change the DNS server address
+The Cloudflare DNS server I chose is `1.1.1.1`
+
+This gives the container an independent DNS server, allowing it to resolve domain names and access Debian repositories.
+
+We can change it back later once Tailscale is installed and configured inside the container.
+
+> P.S. If you don't have Tailscale or another VPN configured on your Proxmox host, you shouldn't encounter this issue.
+
+## 2.3 Update Debian Packages
+
+Let's update Debian packages using the new DNS settings.
+
+```bash
+apt update && apt upgrade -y
+```
+
+## 2.4 Install cURL
+
+We need to download the official **AdGuard Home** installation script directly from GitHub and run it in our Debian container. For this, we need **cURL** - a CLI tool for downloading files.
+```bash
+apt install curl -y
+```
+
+## 3. Install AdGuard Home
+Run the [official installation script](https://github.com/AdguardTeam/AdGuardHome/blob/master/README.md?plain=1&utm_source=chatgpt.com):
+
+```bash
+curl -s -S -L https://raw.githubusercontent.com/AdguardTeam/AdGuardHome/master/scripts/install.sh | sh -s -- -v
+```
+
+After the installation is complete, it will display the server's IP address and port that you can use to access its web interface through your browser.
+
+## 4. Initial AdGuard Configuration
 
 
 

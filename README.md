@@ -3,10 +3,32 @@ This guide covers deploying **AdGuard Home** in a **Proxmox LXC container** and 
 
 **AdGuard Home** is a self-hosted DNS filtering solution that blocks ads, trackers, phishing and malicious domains across your entire network. I initially considered both **Pi-hole** and **AdGuard Home**. After reading feedback from other users and researching their features, I chose **AdGuard** because it seemed more flexible and interesting for my needs.
 
+---
 
+## Table of Contents
 
+1. [Deploying the LXC Container](#1-deploying-the-lxc-container)
+   - [1.1 Download the Debian Template](#11-download-the-debian-template)
+   - [1.2 Create the LXC Container](#12-create-the-lxc-container)
+   - [1.3 Configure Automatic Startup](#13-configure-automatic-startup)
+2. [Update Debian](#2-update-debian)
+   - [2.1 DNS Issue](#21-dns-issue)
+   - [2.2 Temporary DNS Solution](#22-temporary-dns-solution)
+   - [2.3 Update Debian Packages](#23-update-debian-packages)
+   - [2.4 Install cURL](#24-install-curl)
+3. [Install AdGuard Home](#3-install-adguard-home)
+4. [Initial AdGuard Configuration](#4-initial-adguard-configuration)
+5. [Router DNS Configuration](#5-router-dns-configuration)
+6. [Install Tailscale](#6-install-tailscale)
+   - [6.1 Enable TUN Device Access](#61-enable-tun-device-access)
+   - [6.2 Install Tailscale](#62-install-tailscale)
+   - [6.3 Verify the Connection](#63-verify-the-connection)
+7. [Access AdGuard Outside Your LAN](#7-access-adguard-outside-your-lan)
+8. [Additional DNS Security Configs](#8-additional-dns-security-configs)
+9. [Add DNS Blocklists](#9-add-dns-blocklists)
+10. [Restrict DNS Access](#10-restrict-dns-access)
 
-
+---
 
 ## 1. Deploying the LXC Container
 
@@ -67,6 +89,8 @@ Select your Container → **Options** → **Start at boot** → **Enable**
 
 This ensures the AdGuard container starts automatically whenever the Proxmox host boots or restarts.
 
+---
+
 ## 2. Update Debian
 Start by updating the package lists and installing available updates:
 
@@ -108,6 +132,8 @@ We need to download the official **AdGuard Home** installation script directly f
 apt install curl -y
 ```
 
+---
+
 ## 3. Install AdGuard Home
 Run the [**official installation script**](https://github.com/AdguardTeam/AdGuardHome/blob/69ee3d389910d5d30701cbe867280cf1809853ac/README.md?plain=1#L82-L84):
 
@@ -116,6 +142,8 @@ curl -s -S -L https://raw.githubusercontent.com/AdguardTeam/AdGuardHome/master/s
 ```
 
 After the installation is complete, it will display the server's IP address and port that you can use to access its web interface through your browser.
+
+---
 
 ## 4. Initial AdGuard Configuration
 
@@ -139,6 +167,7 @@ Then create your **administrator account**.
 
 AdGuard Home will thenshow instructions explaining how to connect your devices to the DNS server. At this stage, we don't need to configure each device individually. Instead, we can configure our router (network gateway) to use AdGuard Home as its DNS server. This way, all devices connected to our local network (LAN) will automatically use AdGuard for DNS queries without requiring individual configuration.
 
+---
 
 ## 5. Router DNS Configuration
 
@@ -165,6 +194,8 @@ sudo nmcli networking on
 On **macOS**, I renewed the DHCP lease through the network settings:
 
 **System Settings** → **Network**→ **Details...** → **TCP/IP** → **Renew DHCP Lease**
+
+---
 
 ## 6. Install Tailscale
 
@@ -214,6 +245,8 @@ tailscale ip -4
 
 Tailscale address from this deployment: `100.x.x.x`
 
+---
+
 ## 7. Access AdGuard Outside Your LAN
 
 At this point, AdGuard Home is configured to work within our local network (LAN).
@@ -255,6 +288,8 @@ This allows remote devices to use AdGuard Home even when connected through mobil
 
 **AdGuard** will now listen for DNS queries on both network interfaces. Moreover, the **AdGuard** web interface is also accessible through its Tailscale IP address! We can now see DNS queries from our Tailscale clients.
 
+---
+
 ## 8. Additional DNS Security Configs
 
 The following are the recommended settings used in this deployment.
@@ -276,6 +311,8 @@ Open the AdGuard Home dashboard and navigate to **Settings** → **DNS**
 * Maximum TTL override: `0`
 * Optimistic caching: `Enabled`
 
+---
+
 ## 9. Add DNS Blocklists
 
 The blocklists below reflect my personal preferences. You can choose different lists depending on your needs and how aggressively you want to block ads, trackers, and other domains.
@@ -285,6 +322,8 @@ Navigate to the AdGuard Home dashboard:
 **Filters** → **DNS blocklists**
 
 You can find more DNS blocklists in the official [AdGuard Hostlists Registry](https://github.com/AdguardTeam/HostlistsRegistry.git).
+
+---
 
 ## 10. Restrict DNS Access
 

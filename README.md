@@ -243,4 +243,57 @@ Save the changes and restart AdGuard Home:
 systemctl restart AdGuardHome
 ```
 
-**AdGuard** will now listen for DNS queries on both network interfaces. Moreover, the **AdGuard** web interface is also accessible through its Tailscale IP address!
+We also need to add AdGuard's Tailscale IP address to **Global Nameservers** in the Tailscale Admin Console. This allows devices connected to our Tailscale network to use AdGuard as their DNS server even when we're away from home.
+
+Go to **Tailscale Admin Console** (I sign in using my GitHub account) → **DNS** → **Nameservers** → **Add nameserver** → **Custom...** and enter AdGuard's Tailscale IP address.
+
+* Override local DNS `Enabled`
+* MagicDNS `Enabled`
+
+On client devices, enable **"Use Tailscale DNS"** settings in the Tailscale application.
+This allows remote devices to use AdGuard Home even when connected through mobile data or another Wi-Fi network.
+
+**AdGuard** will now listen for DNS queries on both network interfaces. Moreover, the **AdGuard** web interface is also accessible through its Tailscale IP address! We can now see DNS queries from our Tailscale clients.
+
+## 8. Additional DNS Security Configs
+
+The following are the recommended settings used in this deployment.
+
+Open the AdGuard Home dashboard and navigate to **Settings** → **DNS**
+
+**Upstream DNS servers**
+* Upstream Mode `Load balancing`
+
+**DNS server configuration**
+* Rate limit: `20 req/s`
+* EDNS Client Subnet: `Disabled`
+
+**DNS Cache**
+* DNSSEC: `Enabled`
+* DNS cache: `Enabled`
+* Cache size: `16 MB` (16777216)
+* Minimum TTL override: `0`
+* Maximum TTL override: `0`
+* Optimistic caching: `Enabled`
+
+## 9. Add DNS Blocklists
+
+The blocklists below reflect my personal preferences. You can choose different lists depending on your needs and how aggressively you want to block ads, trackers, and other domains.
+
+Navigate to the AdGuard Home dashboard:
+
+**Filters** → **DNS blocklists**
+
+You can find more DNS blocklists in the official [AdGuard Hostlists Registry](https://github.com/AdguardTeam/HostlistsRegistry.git).
+
+## 10. Restrict DNS Access
+
+AdGuard Home allows us to restrict which devices can send DNS queries to our server. You can specify allowed devices using their IP addresses or client identifiers.
+
+Go to AdGuard dashboard:
+
+**Settings** → **DNS** → **Access settings** → **Allowed clients**
+
+After testing this feature, I decided it was overkill for my setup. My home network is already reasonably isolated, and maintaining a list of allowed devices would add unnecessary complexity, especially since devices use both LAN and Tailscale IP addresses to reach AdGuard Home. This could also require DHCP reservations and ongoing IP address management. For my setup, the extra maintenance isn't worth it.
+
+However, this is a useful feature if you want to control or separate DNS access for specific devices or groups.

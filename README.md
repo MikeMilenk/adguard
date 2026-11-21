@@ -109,7 +109,7 @@ apt install curl -y
 ```
 
 ## 3. Install AdGuard Home
-Run the [official installation script](https://github.com/AdguardTeam/AdGuardHome/blob/69ee3d389910d5d30701cbe867280cf1809853ac/README.md?plain=1#L83):
+Run the [**official installation script**](https://github.com/AdguardTeam/AdGuardHome/blob/69ee3d389910d5d30701cbe867280cf1809853ac/README.md?plain=1#L82-L84):
 
 ```bash
 curl -s -S -L https://raw.githubusercontent.com/AdguardTeam/AdGuardHome/master/scripts/install.sh | sh -s -- -v
@@ -119,15 +119,30 @@ After the installation is complete, it will display the server's IP address and 
 
 ## 4. Initial AdGuard Configuration
 
+Open the IP address provided by the installer. `http://192.168.1.10:3000` in my case. Click Get Started to begin the configuration.
+
+**Admin Web Interface**
+
+This controls how you access the **AdGuard** dashboard through your browser.
+* Listen interface: `All interfaces`
+* Port: `80`
+
+**DNS Server**
+
+This determines how **AdGuard** receives DNS queries from your devices.
+* Listen interface: `All interfaces`
+* Port: `53`
+
+Keep these default values for a typical home network installation.
+
+Then create your **administrator account**.
+
+AdGuard Home will thenshow instructions explaining how to connect your devices to the DNS server. At this stage, we don't need to configure each device individually. Instead, we can configure our router (network gateway) to use AdGuard Home as its DNS server. This way, all devices connected to our local network (LAN) will automatically use AdGuard for DNS queries without requiring individual configuration.
 
 
+## 5. Router DNS Configuration
 
-
-
-
-## 0. Router DNS Configuration
-
-Then I added `192.168.1.10` as the primary DNS server in my router's settings and kept the router's default DNS as the secondary server.
+I opened my router's web interface and set `192.168.1.10` as the primary DNS server, leaving the router's default DNS server as the secondary one.
 
 This means devices on my LAN (that receive their network settings from the router) will use **AdGuard** for DNS queries. If the AdGuard server becomes unavailable, devices can fall back to the secondary DNS server and hopefully retain internet access.
 

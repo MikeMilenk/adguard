@@ -146,3 +146,23 @@ I opened my router's web interface and set `192.168.1.10` as the primary DNS ser
 
 This means devices on my LAN (that receive their network settings from the router) will use **AdGuard** for DNS queries. If the AdGuard server becomes unavailable, devices can fall back to the secondary DNS server and hopefully retain internet access.
 
+After updating the DNS settings on my router, it asked me to renew the DHCP lease on my devices to apply the new network configuration.
+
+On **Windows**, this can be done using two commands in Command Prompt:
+
+```cmd
+ipconfig /release
+ipconfig /renew
+```
+
+If you're using **Linux (Ubuntu/Debian)** NetworkManager, the easiest way is to restart the network connection.
+
+```bash
+sudo nmcli networking off
+sudo nmcli networking on
+```
+
+On **macOS**, I renewed the DHCP lease through the network settings:
+
+**System Settings** → **Network**→ **Details...** → **TCP/IP** → **Renew DHCP Lease**
+

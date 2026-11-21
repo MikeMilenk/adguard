@@ -27,6 +27,7 @@ This guide covers deploying **AdGuard Home** in a **Proxmox LXC container** and 
 8. [Additional DNS Security Configs](#8-additional-dns-security-configs)
 9. [Add DNS Blocklists](#9-add-dns-blocklists)
 10. [Restrict DNS Access](#10-restrict-dns-access)
+11. [Restore the Container's DNS Setting](#11-restore-the-containers-dns-setting)
 
 ---
 
@@ -39,7 +40,9 @@ LXC containers use fewer system resources, start faster, and integrate directly 
 
 Open **pve** → select the storage that supports Container Templates (usually named **_local (pve)_** ) → **CT Templates** → **Templates** → Search for `debian-13-standard` → **Download**.
 
-Why Debian 13? It's lightweight and stable. The Standard template provides a minimal installation without a graphical desktop or unnecessary software, making it ideal for running AdGuard in an LXC container.
+![Download debian template](https://github.com/MikeMilenk/adguard/blob/4881549e8657d88b17f935b7cd6c496f851c9bbc/images/1.1%20-%20Download%20debian%20template.png)
+
+> Why Debian 13? It's lightweight and stable. The Standard template provides a minimal installation without a graphical desktop or unnecessary software, making it ideal for running AdGuard in an LXC container.
 
 ### 1.2 Create the LXC Container
 
@@ -51,8 +54,12 @@ Configure **General** tab:
 * Set a strong root password
 * Enable Unprivileged Container (An unprivileged container is more secure because its root user has limited permissions on the Proxmox host).
 
+![Create LXC container - General](https://github.com/MikeMilenk/adguard/blob/4881549e8657d88b17f935b7cd6c496f851c9bbc/images/1.2.1%20-%20Create%20LXC%20container%20-%20General.png)
+
 **Template**
 Select the downloaded **Debian 13** template.
+
+![Create LXC container - Template](https://github.com/MikeMilenk/adguard/blob/4881549e8657d88b17f935b7cd6c496f851c9bbc/images/1.2.2%20-%20Create%20LXC%20container%20-%20Template.png)
 
 **Disks**
 * Storage: `local-lvm` in my case
@@ -71,25 +78,31 @@ Select the downloaded **Debian 13** template.
 * IPv4/CIDR: `192.168.1.10/24`
 * Gateway: `192.168.1.1`
 
+![Create LXC container - Network](https://github.com/MikeMilenk/adguard/blob/4881549e8657d88b17f935b7cd6c496f851c9bbc/images/1.2.4%20-%20Create%20LXC%20container%20-%20Network.png)
+
 **A few words about network configuration**
 
 In the **Network** section, I assigned a static IP address to the future AdGuard server: `192.168.1.10`
 
-Before choosing the address, I opened my router's web interface and checked its DHCP range. My router assigns addresses from `192.168.1.100` to `192.168.1.249`. Addresses from `192.168.1.2` to `192.168.1.99` are outside this range and are not automatically assigned by DHCP.
+Before choosing the address, I opened my router's web interface and checked its DHCP range. My router assigns addresses from `192.168.1.100` to `192.168.1.249`. Addresses from `192.168.1.1` to `192.168.1.99` are outside this range and are not automatically assigned by DHCP.
 
-Why didn't I use DHCP Reservation?
+![Routers DHCP Range](https://github.com/MikeMilenk/adguard/blob/4881549e8657d88b17f935b7cd6c496f851c9bbc/images/1.2.3%20-%20Routers%20DHCP%20Range.png)
 
 **Why didn't I use DHCP Reservation?**
 
 Since I chose an IP address outside my router's DHCP range, I assigned it manually instead of using DHCP reservation. This prevents the router from accidentally assigning the same IP address to another device.
 
 Finish the wizard and start the container.
+
+![Create LXC container - Confirmation tab](https://github.com/MikeMilenk/adguard/blob/4881549e8657d88b17f935b7cd6c496f851c9bbc/images/1.2.5%20-%20Create%20LXC%20container%20-%20Confirmation%20tab.png)
   
 ## 1.3 Configure Automatic Startup
 
-Select your Container → **Options** → **Start at boot** → **Enable**
+Select your container → **Options** → **Start at boot** → **Enable**
 
 This ensures the AdGuard container starts automatically whenever the Proxmox host boots or restarts.
+
+![Start at boot option](https://github.com/MikeMilenk/adguard/blob/4881549e8657d88b17f935b7cd6c496f851c9bbc/images/1.3%20-%20Start%20at%20boot%20option.png)
 
 ---
 
@@ -102,6 +115,8 @@ apt update && apt upgrade -y
 
 However, the container couldn't resolve the Debian repository addresses, so the update process failed with _Temporary failure resolving_.
 
+![Update issues](https://github.com/MikeMilenk/adguard/blob/4881549e8657d88b17f935b7cd6c496f851c9bbc/images/2.1%20-%20Update%20issues.png)
+
 ### 2.1 DNS Issue
 
 After investigating, I noticed that the Container had inherited the DNS settings from the Proxmox host. Its DNS server was `100.100.100.100`, which belongs to **Tailscale**.
@@ -110,12 +125,14 @@ Tailscale was already installed and configured on the Proxmox host, but not insi
 
 ### 2.2 Temporary DNS Solution
 
-In the Proxmox web interface → Select Container → **DNS** → **DNS server** → **Edit** → change the DNS server address
+In the Proxmox web interface → Select container → **DNS** → **DNS server** → **Edit** → change the DNS server address
 The Cloudflare DNS server I chose is `1.1.1.1`
 
 This gives the container an independent DNS server, allowing it to resolve domain names and access Debian repositories.
 
-We can change it back later once Tailscale is installed and configured inside the container.
+![Temporary DNS changes](https://github.com/MikeMilenk/adguard/blob/53da0cd2f5da48874cbbc520b766bb6cc5235595/images/2.2%20-%20Temporary%20DNS%20changes.png)
+
+We can change it back later during step 11. [Restore the Container's DNS Setting](#11-restore-the-containers-dns-setting) once Tailscale is installed and configured inside the container.
 
 > P.S. If you don't have Tailscale or another VPN configured on your Proxmox host, you shouldn't encounter this issue.
 
@@ -145,11 +162,15 @@ curl -s -S -L https://raw.githubusercontent.com/AdguardTeam/AdGuardHome/master/s
 
 After the installation is complete, it will display the server's IP address and port that you can use to access its web interface through your browser.
 
+![Install AdGuard Home](https://github.com/MikeMilenk/adguard/blob/53da0cd2f5da48874cbbc520b766bb6cc5235595/images/3%20-%20Install%20AdGuard.png)
+
 ---
 
 ## 4. Initial AdGuard Configuration
 
 Open the IP address provided by the installer. `http://192.168.1.10:3000` in my case. Click Get Started to begin the configuration.
+
+![AdGuard Welcome Page](https://github.com/MikeMilenk/adguard/blob/53da0cd2f5da48874cbbc520b766bb6cc5235595/images/4.1%20-%20AdGuard%20Welcome%20Page.png)
 
 **Admin Web Interface**
 
@@ -165,15 +186,23 @@ This determines how **AdGuard** receives DNS queries from your devices.
 
 Keep these default values for a typical home network installation.
 
+![AdGuard Network Setup](https://github.com/MikeMilenk/adguard/blob/53da0cd2f5da48874cbbc520b766bb6cc5235595/images/4.2%20-%20AdGuard%20Network%20Setup.png)
+
 Then create your **administrator account**.
 
+![Create admin account](https://github.com/MikeMilenk/adguard/blob/53da0cd2f5da48874cbbc520b766bb6cc5235595/images/4.3%20-%20Create%20admin%20account.jpg)
+
 AdGuard Home will then show instructions explaining how to connect your devices to the DNS server. At this stage, we don't need to configure each device individually. Instead, we can configure our router (network gateway) to use AdGuard Home as its DNS server. This way, all devices connected to our local network (LAN) will automatically use AdGuard for DNS queries without requiring individual configuration.
+
+![https://github.com/MikeMilenk/adguard/blob/53da0cd2f5da48874cbbc520b766bb6cc5235595/images/4.4%20-%20Device%20configuration.png](https://github.com/MikeMilenk/adguard/blob/53da0cd2f5da48874cbbc520b766bb6cc5235595/images/4.4%20-%20Device%20configuration.png)
 
 ---
 
 ## 5. Router DNS Configuration
 
 I opened my router's web interface and set `192.168.1.10` as the primary DNS server, leaving the secondary DNS field empty. This ensures that devices receiving their network configuration through DHCP use AdGuard Home as their DNS server.
+
+![Routers DNS Settings](https://github.com/MikeMilenk/adguard/blob/53da0cd2f5da48874cbbc520b766bb6cc5235595/images/5.1%20-%20Routers%20DNS%20Settings.png)
 
 However, if you prefer to have a backup DNS server, you can keep your router's default DNS server or use an alternative such as Cloudflare's `1.1.1.2`, which provides malware protection.
 
@@ -199,6 +228,8 @@ On **macOS**, I renewed the DHCP lease through the network settings:
 
 **System Settings** → **Network**→ **Details...** → **TCP/IP** → **Renew DHCP Lease**
 
+![MacOS DNS settings](https://github.com/MikeMilenk/adguard/blob/53da0cd2f5da48874cbbc520b766bb6cc5235595/images/5.2%20-%20MacOS%20DNS%20settings.png)
+
 ---
 
 ## 6. Install Tailscale
@@ -207,7 +238,7 @@ Here I want to install **Tailscale** directly in my **AdGuard LXC container**. T
 
 ### 6.1 Enable TUN Device Access
 
-First, we need to allow our LXC container to access the TUN (Network Tunnel) device. Unlike a full VM, an LXC container shares the Proxmox host's Linux kernel and has restricted access to system devices. Tailscale needs access to `/dev/net/tun` to create its virtual network interface.
+First, we need to allow our LXC container to access the **TUN** (Network Tunnel) device. Unlike a full VM, an LXC container shares the Proxmox host's Linux kernel and has restricted access to system devices. Tailscale needs access to `/dev/net/tun` to create its virtual network interface.
 
 This is why we need to enable TUN device access manually in our LXC container. On regular VMs, this usually works without any additional configuration.
 
@@ -215,7 +246,16 @@ In Proxmox:
 
 select your **container** → **Resources** → **Add** → **Device Passthrough** → set the device path to `/dev/net/tun`
 
+![Device Passthrough](https://github.com/MikeMilenk/adguard/blob/53da0cd2f5da48874cbbc520b766bb6cc5235595/images/6.1%20-%20Device%20Passthrough.png)
+
 Restart the container.
+
+At this point, AdGuard Home is configured to work within our LAN.
+You can now see DNS traffic from devices on your local network in the _Query Log_.
+
+![Query Log LAN IP](https://github.com/MikeMilenk/adguard/blob/53da0cd2f5da48874cbbc520b766bb6cc5235595/images/7.1%20-%20Query%20Log%20LAN%20IP.png)
+
+**But what if we want to use AdGuard Home while we're away from home? How can we access it remotely and continue using DNS filtering? To achieve this, we'll integrate AdGuard Home with Tailscale.**
 
 ## 6.2 Install Tailscale
 
@@ -253,26 +293,24 @@ Tailscale IPv4 address: 100.x.x.x
 
 ## 7. Access AdGuard Outside Your LAN
 
-At this point, AdGuard Home is configured to work within our local network (LAN).
-
-But what if we want to use AdGuard while we're away from home? How can we access it remotely through the Tailscale network?
-
-**Open the configuration file:**
+Open the `AdGuardHome.yaml` configuration file:
 
 ```bash
 nano /opt/AdGuardHome/AdGuardHome.yaml
 ```
 
-Find dns → bind_hosts and add both IP addresses:
+Find `dns` → `bind_hosts` and add both IP addresses:
 ```bash
 dns:
   bind_hosts:
     - 192.168.1.10
-    - <your tailscale ip>
+    - <YOUR_TAILSCALE_IP>
   port: 53
 ```
 
-Press Ctrl + O, then Enter to save, and Ctrl + X to exit Nano.
+![Adding Tailscale IP](https://github.com/MikeMilenk/adguard/blob/53da0cd2f5da48874cbbc520b766bb6cc5235595/images/7.2%20-%20Adding%20Tailscale%20IP.png)
+
+Press Ctrl+O, then Enter to save, and Ctrl+X to exit Nano.
 
 Save the changes and restart AdGuard Home:
 
@@ -287,10 +325,25 @@ Go to **Tailscale Admin Console** (I sign in using my GitHub account) → **DNS*
 * Override local DNS `Enabled`
 * MagicDNS `Enabled`
 
-Make sure **"Use Tailscale DNS"** settings is enabled on each client device.
-This allows remote devices to use AdGuard even when connected through mobile data or another Wi-Fi network.
+![Adding tailscale global nameserver](https://github.com/MikeMilenk/adguard/blob/53da0cd2f5da48874cbbc520b766bb6cc5235595/images/7.3%20-%20Adding%20tailscale%20global%20nameserver.png)
 
-**AdGuard** will now listen for DNS queries on both network interfaces. Moreover, the **AdGuard** web interface is also accessible through its Tailscale IP address! We can now see DNS queries from our Tailscale clients.
+Make sure **"Use Tailscale DNS"** settings is enabled on each client device. This allows remote devices to use AdGuard even when connected through mobile data or another Wi-Fi network.
+
+For the **mobile app**, open Tailscale settings and enable the toggle.
+
+![iPhone Use Tailscale DNS 1](https://github.com/MikeMilenk/adguard/blob/53da0cd2f5da48874cbbc520b766bb6cc5235595/images/7.4.1%20-%20iPhone%20Use%20Tailscale%20DNS.jpg)
+
+![iPhone Use Tailscale DNS 2](https://github.com/MikeMilenk/adguard/blob/53da0cd2f5da48874cbbc520b766bb6cc5235595/images/7.4.2%20-%20iPhone%20Use%20Tailscale%20DNS.jpg)
+
+The **desktop app** has a very similar setting.
+
+![PC Use Tailscale DNS 1](https://github.com/MikeMilenk/adguard/blob/53da0cd2f5da48874cbbc520b766bb6cc5235595/images/7.5.1%20-%20PC%20Use%20Tailscale%20DNS.png)
+
+![PC Use Tailscale DNS 2](https://github.com/MikeMilenk/adguard/blob/53da0cd2f5da48874cbbc520b766bb6cc5235595/images/7.5.2%20-%20PC%20Use%20Tailscale%20DNS.png)
+
+**AdGuard** is now listening for DNS queries on both network interfaces. Moreover, the **AdGuard** web interface is also accessible through its Tailscale IP address! We can now see DNS queries from our Tailscale clients.
+
+![Query Log Tailscale IP](https://github.com/MikeMilenk/adguard/blob/53da0cd2f5da48874cbbc520b766bb6cc5235595/images/7.6%20-%20Query%20Log%20Tailscale%20IP.png)
 
 ---
 
@@ -325,6 +378,8 @@ Navigate to the AdGuard Home dashboard:
 
 **Filters** → **DNS blocklists**
 
+![DNS Blocklists](https://github.com/MikeMilenk/adguard/blob/53da0cd2f5da48874cbbc520b766bb6cc5235595/images/9%20-%20DNS%20Blocklists.png)
+
 You can find more DNS blocklists in the official [AdGuard Hostlists Registry](https://github.com/AdguardTeam/HostlistsRegistry.git).
 
 ---
@@ -340,3 +395,21 @@ Go to AdGuard dashboard:
 After testing this feature, I decided it was overkill for my setup. My home network is already reasonably isolated, and maintaining a list of allowed devices would add unnecessary complexity, especially since devices use both LAN and Tailscale IP addresses to reach AdGuard Home. This could also require DHCP reservations and ongoing IP address management. For my setup, the extra maintenance isn't worth it.
 
 However, this is a useful feature if you want to control or separate DNS access for specific devices or groups.
+
+## 11. Restore the Container's DNS Setting
+
+Earlier, we temporarily changed the container's DNS server from Tailscale's 100.100.100.100 to Cloudflare's `1.1.1.1` to resolve DNS issues. For now we need to configure **AdGuard Home** as the Container's DNS Server. To ensure that DNS queries generated by the container itself are also filtered by AdGuard Home, we can configure it to use its own local DNS service.
+
+First add `127.0.0.1` in AdGuard Home's bind_hosts configuration in `/opt/AdGuardHome/AdGuardHome.yaml`
+
+```bash
+nano /opt/AdGuardHome/AdGuardHome.yaml
+```
+
+![DNS bind hosts config](https://github.com/MikeMilenk/adguard/blob/9f3fbf761633bf027c21dc2ed9364c3b24244eb7/images/11.1%20-%20DNS%20bind%20hosts%20config.png)
+
+Then open the container's DNS settings in Proxmox again and set the DNS server to `127.0.0.1`.
+
+![DNS container config](https://github.com/MikeMilenk/adguard/blob/9f3fbf761633bf027c21dc2ed9364c3b24244eb7/images/11.2%20-%20DNS%20container%20config.png)
+
+Restart the container and enjoy ad-free browsing with DNS filtering!

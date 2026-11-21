@@ -30,24 +30,56 @@ Configure **General** tab:
 * Enable Unprivileged Container (An unprivileged container is more secure because its root user has limited permissions on the Proxmox host).
 
 **Template
-*** Select the downloaded Debian 13 template.
+*** Select the downloaded **Debian 13** template.
 
 **Disks**
-* Storage: local-lvm in my case
-* Disk size: 4 GB
+* Storage: `local-lvm` in my case
+* Disk size: `4 GB`
 
 **CPU**
-* Cores: 1
+* Cores: `1`
 
 **Memory**
-* Memory: 512 MB
-* Swap: 512 MB
+* Memory: `512 MB`
+* Swap: `512 MB`
 
 **Network**
-* Bridge: vmbr0
-* IPv4: Static
-* IPv4/CIDR: 192.168.1.10/24
-* Gateway: 192.168.1.1
+* Bridge: `vmbr0`
+* IPv4: `Static`
+* IPv4/CIDR: `192.168.1.10/24`
+* Gateway: `192.168.1.1`
+
+**A few words about network configuration**
+
+In the **Network** section, I assigned a static IP address to the future AdGuard server: `192.168.1.10`
+
+Before choosing the address, I opened my router's web interface and checked its DHCP range. My router assigns addresses from `192.168.1.100` to `192.168.1.249`. Addresses from `192.168.1.2` to `192.168.1.99` are outside this range and are not automatically assigned by DHCP.
+
+Why didn't I use DHCP Reservation?
+
+DHCP Reservation is used to make a device receive the same IP address every time, but the reserved address normally needs to be within the router's DHCP pool. Since I chose an address outside that range (`192.168.1.10`), a reservation wasn't necessary. The router won't accidentally assign the same address to another device.
 
   
-Finish the wizard and start the container.
+## 1.3 Configure Automatic Startup
+
+Select your Container → **Options** → **Start at boot** → **Enable**
+
+This ensures the AdGuard container starts automatically whenever the Proxmox host boots or restarts.
+
+
+
+
+
+
+
+
+
+
+
+
+## 0. Router DNS Configuration
+
+Then I added `192.168.1.10` as the primary DNS server in my router's settings and kept the router's default DNS as the secondary server.
+
+This means devices on my LAN (that receive their network settings from the router) will use **AdGuard** for DNS queries. If the AdGuard server becomes unavailable, devices can fall back to the secondary DNS server and hopefully retain internet access.
+

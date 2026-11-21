@@ -166,3 +166,81 @@ On **macOS**, I renewed the DHCP lease through the network settings:
 
 **System Settings** → **Network**→ **Details...** → **TCP/IP** → **Renew DHCP Lease**
 
+## 6. Install Tailscale
+
+Here I want to install **Tailscale** directly in my **AdGuard LXC container**. This will allow me to access AdGuard Home remotely and use its DNS filtering even when I'm outside my home network.
+
+### 6.1 Enable TUN Device Access
+
+First, we need to allow our LXC container to access the TUN (Network Tunnel) device. Unlike a full VM, an LXC container shares the Proxmox host's Linux kernel and has restricted access to system devices. Tailscale needs access to `/dev/net/tun` to create its virtual network interface.
+
+This is why we need to enable TUN device access manually in our LXC container. On regular VMs, this usually works without any additional configuration.
+
+In Proxmox:
+
+select your **Container** → **Resources** → **Add** → **Device Passthrough** → set the device path to `/dev/net/tun`
+
+Restart the container.
+
+## 6.2 Install Tailscale
+
+Inside the container, run the [**official installation command**](https://tailscale.com/docs/install/linux) to download and install Tailscale:
+
+```bash
+curl -fsSL https://tailscale.com/install.sh | sh
+```
+
+Once the installation is complete, start Tailscale:
+
+```bash
+tailscale up
+```
+
+The terminal will display an authentication URL. Open it in your browser and authorize the device.
+
+## 6.3 Verify the connection
+
+To check whether Tailscale is running, execute:
+
+```bash
+tailscale status
+```
+
+To get the container's Tailscale IPv4 address, run:
+
+```bash
+tailscale ip -4
+```
+
+Tailscale address from this deployment: `100.x.x.x`
+
+## 7. Access AdGuard Outside Your LAN
+
+At this point, AdGuard Home is configured to work within our local network (LAN).
+
+But what if we want to use AdGuard while we're away from home? How can we access it remotely through the Tailscale network?
+
+**Open the configuration file:**
+
+```bash
+nano /opt/AdGuardHome/AdGuardHome.yaml
+```
+
+Find dns → bind_hosts and add both IP addresses:
+```bash
+dns:
+  bind_hosts:
+    - 192.168.1.10
+    - <_your tailscale ip_>
+  port: 53
+```
+
+Press Ctrl + O, then Enter to save, and Ctrl + X to exit Nano.
+
+Save the changes and restart AdGuard Home:
+
+```bash
+systemctl restart AdGuardHome
+```
+
+**AdGuard** will now listen for DNS queries on both network interfaces. Moreover, the **AdGuard** web interface is also accessible through its Tailscale IP address!

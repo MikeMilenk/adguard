@@ -79,7 +79,9 @@ Before choosing the address, I opened my router's web interface and checked its 
 
 Why didn't I use DHCP Reservation?
 
-DHCP Reservation is used to make a device receive the same IP address every time, but the reserved address normally needs to be within the router's DHCP pool. Since I chose an address outside that range (`192.168.1.10`), a reservation wasn't necessary. The router won't accidentally assign the same address to another device.
+**Why didn't I use DHCP Reservation?**
+
+Since I chose an IP address outside my router's DHCP range, I assigned it manually instead of using DHCP reservation. This prevents the router from accidentally assigning the same IP address to another device.
 
 Finish the wizard and start the container.
   
@@ -165,17 +167,19 @@ Keep these default values for a typical home network installation.
 
 Then create your **administrator account**.
 
-AdGuard Home will thenshow instructions explaining how to connect your devices to the DNS server. At this stage, we don't need to configure each device individually. Instead, we can configure our router (network gateway) to use AdGuard Home as its DNS server. This way, all devices connected to our local network (LAN) will automatically use AdGuard for DNS queries without requiring individual configuration.
+AdGuard Home will then show instructions explaining how to connect your devices to the DNS server. At this stage, we don't need to configure each device individually. Instead, we can configure our router (network gateway) to use AdGuard Home as its DNS server. This way, all devices connected to our local network (LAN) will automatically use AdGuard for DNS queries without requiring individual configuration.
 
 ---
 
 ## 5. Router DNS Configuration
 
-I opened my router's web interface and set `192.168.1.10` as the primary DNS server, leaving the router's default DNS server as the secondary one.
+I opened my router's web interface and set `192.168.1.10` as the primary DNS server, leaving the secondary DNS field empty. This ensures that devices receiving their network configuration through DHCP use AdGuard Home as their DNS server.
 
-This means devices on my LAN (that receive their network settings from the router) will use **AdGuard** for DNS queries. If the AdGuard server becomes unavailable, devices can fall back to the secondary DNS server and hopefully retain internet access.
+However, if you prefer to have a backup DNS server, you can keep your router's default DNS server or use an alternative such as Cloudflare's `1.1.1.2`, which provides malware protection.
 
-After updating the DNS settings on my router, it asked me to renew the DHCP lease on my devices to apply the new network configuration.
+> Keep in mind that devices may use the secondary DNS server without waiting for the primary one to become unavailable. This means some DNS queries could bypass AdGuard Home filtering.
+
+After updating the DNS settings, I was prompted to **renew the DHCP leases** on my devices to apply the new network configuration.
 
 On **Windows**, this can be done using two commands in Command Prompt:
 
@@ -209,7 +213,7 @@ This is why we need to enable TUN device access manually in our LXC container. O
 
 In Proxmox:
 
-select your **Container** → **Resources** → **Add** → **Device Passthrough** → set the device path to `/dev/net/tun`
+select your **container** → **Resources** → **Add** → **Device Passthrough** → set the device path to `/dev/net/tun`
 
 Restart the container.
 
@@ -243,7 +247,7 @@ To get the container's Tailscale IPv4 address, run:
 tailscale ip -4
 ```
 
-Tailscale address from this deployment: `100.x.x.x`
+Tailscale IPv4 address: 100.x.x.x
 
 ---
 
@@ -283,8 +287,8 @@ Go to **Tailscale Admin Console** (I sign in using my GitHub account) → **DNS*
 * Override local DNS `Enabled`
 * MagicDNS `Enabled`
 
-On client devices, enable **"Use Tailscale DNS"** settings in the Tailscale application.
-This allows remote devices to use AdGuard Home even when connected through mobile data or another Wi-Fi network.
+Make sure **"Use Tailscale DNS"** settings is enabled on each client device.
+This allows remote devices to use AdGuard even when connected through mobile data or another Wi-Fi network.
 
 **AdGuard** will now listen for DNS queries on both network interfaces. Moreover, the **AdGuard** web interface is also accessible through its Tailscale IP address! We can now see DNS queries from our Tailscale clients.
 

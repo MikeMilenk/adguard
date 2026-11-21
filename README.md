@@ -268,7 +268,7 @@ Find dns → bind_hosts and add both IP addresses:
 dns:
   bind_hosts:
     - 192.168.1.10
-    - <_your tailscale ip_>
+    - <your tailscale ip>
   port: 53
 ```
 

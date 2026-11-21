@@ -109,7 +109,7 @@ apt install curl -y
 ```
 
 ## 3. Install AdGuard Home
-Run the [official installation script](https://github.com/AdguardTeam/AdGuardHome/blob/master/README.md?plain=1&utm_source=chatgpt.com):
+Run the [official installation script](https://github.com/AdguardTeam/AdGuardHome/blob/69ee3d389910d5d30701cbe867280cf1809853ac/README.md?plain=1#L83):
 
 ```bash
 curl -s -S -L https://raw.githubusercontent.com/AdguardTeam/AdGuardHome/master/scripts/install.sh | sh -s -- -v

@@ -1,4 +1,4 @@
-# adguard
+# AdGuard Home Deployment
 This guide covers deploying **AdGuard Home** in a **Proxmox LXC container** and integrating it with **Tailscale** for remote DNS filtering.
 
 **AdGuard Home** is a self-hosted DNS filtering solution that blocks ads, trackers, phishing and malicious domains across your entire network. I initially considered both **Pi-hole** and **AdGuard Home**. After reading feedback from other users and researching their features, I chose **AdGuard** because it seemed more flexible and interesting for my needs.
